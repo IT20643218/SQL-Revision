@@ -1,0 +1,231 @@
+create table emp
+(
+	eid integer primary key,
+	ename varchar(25),
+	age int,
+	salary float
+)
+
+insert into emp values(1000,'Lakmal',33,90000)
+insert into emp values(1001,'Nadeeka',24,28000)
+insert into emp values(1002,'Amila',26,35000)
+insert into emp values(1003,'Nishani',28,60000)
+insert into emp values(1004,'Krishan',36,95000)
+insert into emp values(1005,'Surangi',37,22000)
+insert into emp values(1006,'Shanika',24,18000)
+insert into emp values(1007,'Amali',21,20000)
+insert into emp values(1008,'Charith',28,35000)
+insert into emp values(1009,'Prasad',40,95000)
+
+create table dept
+(
+did char(12) primary key,
+budget float,
+managerId int foreign key references emp
+--constraint fk1 foreign key(manager Id) references emp (eid)
+)
+
+insert into dept values('Academic',900000,1002)
+insert into dept values('Admin',120000,1000)
+insert into dept values('Finance',3000000,1008)
+insert into dept values('ITSD',4500000,1000)
+insert into dept values('Maintenance',40000,1004)
+insert into dept values('SESD',20000,1004)
+insert into dept values('Marketing',90000,1008)
+
+create table works
+(
+eid int foreign key references emp,
+did Char(12) foreign key references dept,
+pct_time int,
+primary key(eid,did)
+--constraint fk2 foreign key(eid) references emp (eid)
+--constraint fk3 foreign key(did) references dept(did)
+)
+
+insert into works values(1000,'Admin',40)
+insert into works values(1000,'ITSD',50)
+insert into works values(1001,'Admin',100)
+insert into works values(1002,'Academic',100)
+insert into works values(1003,'Admin',20)
+insert into works values(1003,'Academic',30)
+insert into works values(1003,'ITSD',45)
+insert into works values(1004,'Admin',60)
+insert into works values(1004,'Finance',30)
+insert into works values(1006,'Finance',45)
+insert into works values(1006,'Maintenance',52)
+insert into works values(1008,'Maintenance',30)
+insert into works values(1008,'ITSD',30)
+insert into works values(1008,'Finance',35)
+insert into works values(1009,'Admin',100)
+
+--05. Add a column named hireDate to the employee table. Default value for t`he hireDate is the
+--current date
+ALTER TABLE emp add hiredate datetime default getdate()
+
+update emp
+set hiredate = getdate()
+where hiredate IS NULL
+
+--06.Update the hireDate of the above employee to 1
+--st January 2010.
+
+update emp
+set hiredate ='01.01.2010'
+where eid =1000
+
+--07.Delete the row inserted in question 4
+
+delete emp 
+where eid = 1000
+
+--08.Delete the hire date column from the Emp table
+
+alter table emp drop column hiredate
+
+--09.Delete the Emp table from the database
+
+drop table emp
+
+--10.Display the name and the salary of all employees
+
+select * from emp
+
+select ename ,salary
+from emp
+
+--11. List the name and the salary of all employees in the descending order of his/her salary.
+
+select ename ,salary
+from emp dese
+
+--12. Display the name and the salary of all employees who obtain a salary greater than 50000.
+
+select ename,salary
+from emp 
+where salary > 50000
+
+--13. Display the name of all employees whose name starts with a letter ‘S’
+
+select ename
+from emp
+where ename like 'S%'
+
+--14. For each department display the department name and the name of the manager.
+
+select * from dept
+
+select d.did,e.ename
+from dept d,emp e 
+where d.managerId = e.eid 
+
+--15. For each employee who is earning more than 75000 display the name of the employee and the id
+--of the manager.
+
+select e.ename ,d.managerId
+from emp e,works w ,dept d
+where e.eid=w.eid and w.did=d.did and e.salary >75000
+
+
+--16. Display the names of employees who are not assigned to any department yet.
+
+select ename
+from emp
+where eid NOT IN (select eid from works)
+
+--17. Display the names and the ages of each employee who works in either ‘ITSD’ or ‘Admin’
+--departments
+
+select age ,ename 
+from emp e ,works w
+where e.eid=w.eid and (w.did='Admin' or w.did='ITSD')
+
+--18. Display the names and the ages of each employee who works in both ‘ITSD’ and ‘Admin’
+--departments.
+
+select age ,ename 
+from emp e ,works w
+where e.eid=w.eid and w.did='Admin' and e.eid IN 
+												(select eid from works where did ='ITSD')
+
+--19. For all departments, display the name of the department and the names of the employees working
+--in it.
+
+select e.ename ,w.did
+from emp e,works w
+where e.eid=w.eid
+
+--20. Display the minimum and maximum salary of employees.
+
+select MIN(salary) as MinSalary , MAX(salary) as MaxSalary
+from emp
+
+--21. Display the employees’ name and the total percentage he/she has worked in total.
+
+select e.ename ,sum(pct_time) as TotalPercentage
+from emp e,works w
+where e.eid=w.eid
+group by e.ename
+
+--22. Display the department name and the number of employees in each department.
+
+select  did as Department ,count(eid) as Number_of_Employees
+from works 
+group by did
+
+--23. Display the names of the employee who work more than 90%.
+
+select e.ename ,sum(pct_time) as TotalPercentage
+from emp e,works w
+where e.eid=w.eid
+group by e.ename
+having sum(w.pct_time) >90 
+
+--24. Display the name of departments who have the total of salary exceeding 100000 LKR.
+
+select w.did ,sum(e.salary) as TotalSalary
+from emp e,works w
+where e.eid = w.eid
+group by w.did
+having sum(e.salary) >100000
+
+--25. Display the name of each employee whose salary exceeds the budget of all departments that he or
+--she work in.
+
+select e.ename
+from emp e
+where e.salary > all (select budget 
+						from dept d,works w 
+							where e.eid=w.eid and w.did=d.did)
+								and e.eid IN (select eid from works)
+
+--26. Find the manager ids of managers who manage only departments with budgets greater than
+--1000000 LKR.
+
+select managerid
+from dept
+group by managerId
+having min(budget) > 100000
+
+--27. Find the name of the manager who manages the departments with the largest budget.
+
+select ename
+from dept d ,emp e
+where d.managerId = e.eid and d.budget IN (select max(budget) 
+											from dept)
+
+
+--28. If a manager manages more than one department, he or she controls the sum of all the budgets for
+--those departments. Find the manager id of the managers who control more than 5,000,000 LKR.
+
+select managerid ,sum(budget) as TotalBudget
+from dept
+group by managerId
+having sum(budget) > 500000
+
+--29. Find the manager id of manager who controls the largest amount.
+
+select managerId
+from dept
+group by managerId
+having sum(budget) > = all (select sum(budget) from dept group by managerId) 
